@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using RSBot.Core.Event;
 using RSBot.Core.Network;
 using RSBot.NavMeshApi;
 using RSBot.NavMeshApi.Dungeon;
@@ -151,14 +152,26 @@ public struct Position
     /// <returns></returns>
     public static Position FromPacket(Packet packet)
     {
-        return new Position
+
+        var Region = packet.ReadUShort();
+        var XOffset = packet.ReadFloat();
+        var ZOffset = packet.ReadFloat();
+        var YOffset = packet.ReadFloat();
+        var Angle = packet.ReadShort();
+
+        string message = $"Region:{Region}, XOffset:{XOffset}, ZOffset:{ZOffset}, YOffset:{YOffset}, Angle:{Angle}";
+        //EventManager.SendMessage(message);
+
+
+        var pos = new Position
         {
-            Region = packet.ReadUShort(),
-            XOffset = packet.ReadFloat(),
-            ZOffset = packet.ReadFloat(),
-            YOffset = packet.ReadFloat(),
-            Angle = packet.ReadShort()
+            Region = Region,
+            XOffset = XOffset,
+            ZOffset = ZOffset,
+            YOffset = YOffset,
+            Angle = Angle
         };
+        return pos;
     }
 
     /// <summary>

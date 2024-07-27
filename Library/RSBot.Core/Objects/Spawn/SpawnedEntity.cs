@@ -1,6 +1,7 @@
 ﻿using System;
 using RSBot.Core.Client.ReferenceObjects;
 using RSBot.Core.Components;
+using RSBot.Core.Event;
 
 namespace RSBot.Core.Objects.Spawn;
 
@@ -178,6 +179,7 @@ public class SpawnedEntity
 
     public void SetSource(Position source)
     {
+        if(this.Id == Game.Player.Id)
         Movement.Source = source;
         //SetAngle(source.Angle);
 

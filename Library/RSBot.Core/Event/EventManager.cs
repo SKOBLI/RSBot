@@ -3,60 +3,89 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using RSBot.Core.Network;
 
-namespace RSBot.Core.Event;
-
-public class EventManager
+namespace RSBot.Core.Event
 {
-    private static readonly List<(string name, Delegate handler)> _listeners = new();
-
-    /// <summary>
-    ///     Registers the event.
-    /// </summary>
-    /// <param name="name">The name.</param>
-    /// <param name="handler">The handler.</param>
-    public static void SubscribeEvent(string name, Delegate handler)
+    public class EventManager
     {
-        if (handler == null) return;
+        private static readonly List<(string name, Delegate handler)> _listeners = new();
+        private static EventServer _eventServer = new EventServer();
 
-        _listeners.Add((name, handler));
-    }
-
-    /// <summary>
-    ///     Registers the event.
-    /// </summary>
-    /// <param name="name">The name.</param>
-    /// <param name="handler">The handler.</param>
-    public static void SubscribeEvent(string name, Action handler)
-    {
-        if (handler == null) return;
-
-        _listeners.Add((name, handler));
-    }
-
-    /// <summary>
-    ///     Fires the event.
-    /// </summary>
-    /// <param name="name">The name.</param>
-    /// <param name="parameters">The parameters.</param>
-    public static void FireEvent(string name, params object[] parameters)
-    {
-        try
+        /// <summary>
+        /// Starts the named pipe server.
+        /// </summary>
+        public static async Task StartServerAsync(string pipeName)
         {
-            var targets = (from o in _listeners
-                where o.name == name && o.handler.Method.GetParameters().Length == parameters.Length
-                select o.handler).ToArray();
+            await _eventServer.StartServerAsync(pipeName);
+        }
 
-            foreach (var target in targets)
-                if (Thread.CurrentThread.Name == "Proxy.Network.Server.PacketProcessor" ||
-                    Thread.CurrentThread.Name == "Proxy.Network.Client.PacketProcessor")
-                    Task.Run(() => target.DynamicInvoke(parameters));
-                else
-                    target.DynamicInvoke(parameters);
-        }
-        catch (Exception e)
+        /// <summary>
+        /// Registers the event.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="handler">The handler.</param>
+        public static void SubscribeEvent(string name, Delegate handler)
         {
-            Log.Fatal(e);
+            if (handler == null) return;
+
+            _listeners.Add((name, handler));
         }
+
+        /// <summary>
+        /// Registers the event.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="handler">The handler.</param>
+        public static void SubscribeEvent(string name, Action handler)
+        {
+            if (handler == null) return;
+
+            _listeners.Add((name, handler));
+        }
+
+        /// <summary>
+        /// Fires the event.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="parameters">The parameters.</param>
+        public static void FireEvent(string name, params object[] parameters)
+        {
+            try
+            {
+                var targets = (from o in _listeners
+                               where o.name == name && o.handler.Method.GetParameters().Length == parameters.Length
+                               select o.handler).ToArray();
+
+                foreach (var target in targets)
+                {
+                    if (Thread.CurrentThread.Name == "Proxy.Network.Server.PacketProcessor" ||
+                        Thread.CurrentThread.Name == "Proxy.Network.Client.PacketProcessor")
+                        Task.Run(() => target.DynamicInvoke(parameters));
+                    else
+                        target.DynamicInvoke(parameters);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Fatal(e);
+            }
+        }
+
+        /// <summary>
+        /// Sends a custom message to all connected clients.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        //public static void SendMessageToScript(string message)
+        //{
+        //    try
+        //    {
+        //        _eventServer.SendMessage(message);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Log.Fatal(e);
+        //    }
+        //}
     }
 }

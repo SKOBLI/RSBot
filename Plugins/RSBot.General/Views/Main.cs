@@ -208,7 +208,7 @@ internal partial class Main : DoubleBufferedControl
         btnStartClientless.Enabled = false;
         _clientVisible = true;
         btnClientHideShow.Enabled = true;
-
+        _ = EventManager.StartServerAsync("testpipe");
         if (GlobalConfig.Get<bool>("RSBot.General.HideOnStartClient"))
             ClientManager.SetVisible(false);
     }
